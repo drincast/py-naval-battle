@@ -20,7 +20,8 @@ logging.basicConfig(level=logging.DEBUG)
 logger = logging.getLogger(__name__)
 
 class Ship:
-    def __init__(self, name, size, type):
+    def __init__(self, code, name, size, type):
+        self.code       = code
         self.name       = name
         self.hits       = 0
         self.positions  = []        
@@ -47,7 +48,7 @@ class Ship:
                             response = False
                             break
 
-                        board[start_row][start_col+i] = '1'
+                        board[start_row][start_col+i] = self.code
                         self.add_positions(start_row, start_col+i)
                 elif direction == 'V':
                     for i in  range(self.size):
@@ -56,8 +57,8 @@ class Ship:
                             response = False
                             break
 
-                        board[start_row+i][start_col] = '1'
-                        self.add_positions(start_row+i, start_col, direction)
+                        board[start_row+i][start_col] = self.code
+                        self.add_positions(start_row+i, start_col)
                 else:
                     raise Exception("La dirección no es valida (H o V)", direction)            
 
@@ -80,15 +81,15 @@ class Ship:
 
 class Destroyer(Ship):
     def __init__(self):
-        super().__init__('Destructor', 2, 'D')
+        super().__init__('D', 'Destructor', 2, 'D')
 
 class Submarine(Ship):
     def __init__(self):
-        super().__init__('Submarino', 3, 'S')
+        super().__init__('S', 'Submarino', 3, 'S')
 
 class Battleship(Ship):
     def __init__(self):
-        super().__init__('Acorazado', 4, 'B')
+        super().__init__('B', 'Acorazado', 4, 'B')
 
 class Player:
     def __init__(self, name):
@@ -105,7 +106,7 @@ class Player:
                           , ["", "", "", "", "", "", "", "", "", ""]]
             self.name = name
             self.ships = []
-            self.hits = [[' ' for _ in range(10)] for _ in range(10)]
+            self.hits_board = [[' ' for _ in range(10)] for _ in range(10)]
         except Exception as ex:
             print(ex)
 
@@ -114,30 +115,38 @@ class Player:
         all_ships_sunk = []
         response = False
 
-        for ship in self.ships:
-            if len(ship.positions) == 0:
-                break
+        try:
+            count_ships = len(self.ships)
 
-            if ship.positions[2] == "H":
-                for i in range(ship.size):
-                        if self.board[ship.positions[0]][ship.positions[1] + i] == 'X':
-                            ship_sank = True
-                        else:
-                            ship_sank = False
-                            break                    
-                else:
-                    for i in range(ship.size):
-                        if self.board[ship.positions[0] + i][ship.positions[1]] == 'X':
-                            ship_sank = True
-                        else:
-                            ship_sank = False
-                            break
-            
-            if ship_sank:
-                all_ships_sunk.append(ship)
+            if count_ships == 0:
+                response = True
 
-        if len(self.ships) == len(all_ships_sunk):
-            response = True
+            # for ship in self.ships:
+            #     if len(ship.positions) == 0:
+            #         break
+
+            #     if ship.positions[2] == "H":
+            #         for i in range(ship.size):
+            #                 if self.board[ship.positions[0]][ship.positions[1] + i] == 'X':
+            #                     ship_sank = True
+            #                 else:
+            #                     ship_sank = False
+            #                     break                    
+            #         else:
+            #             for i in range(ship.size):
+            #                 if self.board[ship.positions[0] + i][ship.positions[1]] == 'X':
+            #                     ship_sank = True
+            #                 else:
+            #                     ship_sank = False
+            #                     break
+                
+            #     if ship_sank:
+            #         all_ships_sunk.append(ship)
+
+            # if len(self.ships) == len(all_ships_sunk):
+            #     response = True
+        except Exception as ex:
+            raise ex
 
         return response
 
@@ -152,7 +161,6 @@ class Player:
             battleship = Battleship()
 
             position_is_correct = False
-
             self.ships = [destroyer, submarine, battleship]
 
             #TODO: Se debe crear una forma para que cuando la posicion de la nave no es valido
@@ -173,20 +181,20 @@ class Player:
                         print("No se puede ubicar la nave, intenta de nuevo \n")                        
 
                 position_is_correct = False
-                self.print_board()
+                self.print_board('board')
 
             print("Se ubicaron todas las naves")
-            self.print_board()
-
-
+            self.print_board('board')
             
         except Exception as ex:
             print(ex)
             logger.exception("Ocurrió una excepción")
 
-    def print_board(self):
+    def print_board(self, which):
         try:
-            for row in self.board:
+            whith_board = self.board if which == 'board' else self.hits_board
+
+            for row in whith_board:
                 row2 = [x if x!= '' else ' ' for x in row ]
                 # print(row if row != '' else ' ') 
                 print(row2)               
@@ -203,16 +211,18 @@ class Player:
             print("\n", len(enemy.board), position_x, position_y, enemy.board)
 
             if enemy.board[position_x][position_y] != "":
-                if enemy.board[position_x][position_y] == "X" \
-                    or enemy.board[position_x][position_y] == "-":
+                ship_code = enemy.board[position_x][position_y]
+                if self.hits_board[position_x][position_y] == "X" \
+                    or self.hits_board[position_x][position_y] == "-":
                     
                     print("Ya habías disparado a esta área")
                 else:
                     print("En el blanco !!!")
+                    ship_code = enemy.board[position_x][position_y]
                     enemy.board[position_x][position_y] = "X"
-                    self.hips[position_x][position_y] = "X"
+                    self.hits_board[position_x][position_y] = "X"
                     #Validar si se hundio el barco
-                    ship_sank = self.validate_ship_sank(position_x, position_y, enemy)
+                    ship_sank = self.validate_ship_sank(ship_code, position_x, position_y, enemy)
 
                     if ship_sank != None:
                         print("Nave destruida !!!!")
@@ -220,37 +230,41 @@ class Player:
             else:
                 print("Impacto en el agua")
                 enemy.board[position_x][position_y] = "-"
-                self.hips[position_x][position_y] = "-"
+                self.hits_board[position_x][position_y] = "-"
 
         except Exception as ex:
             print(ex)
             logger.exception("Ocurrió una excepción")
     
-    def validate_ship_sank(self, position_x, position_y, enemy):
+    def validate_ship_sank(self, ship_code, position_x, position_y, enemy):
         try:
             ship_sank = None
             ship_enemy_sank = None
 
             for ship in enemy.ships:
-                if ship.position[2] == "H":
-                    for i in range(ship.size):
-                        if enemy.board[position_x][position_y + i] == 'X':
-                            ship_sank = True
-                        else:
-                            ship_sank = False
-                            break
-                else:
-                    for i in range(ship.size):
-                        if enemy.board[position_x + i][position_y] == 'X':
-                            ship_sank = True
-                        else:
-                            ship_sank = False
-                            break
+                if ship_code == ship.code:
+                    ship_sank = ship.hit()
 
-                if ship_sank == False:
-                    break
-                else:
-                    ship_enemy_sank = ship
+
+                # if ship.position[2] == "H":
+                #     for i in range(ship.size):
+                #         if enemy.board[position_x][position_y + i] == 'X':
+                #             ship_sank = True
+                #         else:
+                #             ship_sank = False
+                #             break
+                # else:
+                #     for i in range(ship.size):
+                #         if enemy.board[position_x + i][position_y] == 'X':
+                #             ship_sank = True
+                #         else:
+                #             ship_sank = False
+                #             break
+
+                    if ship_sank == False:
+                        break
+                    else:
+                        ship_enemy_sank = ship
             
             return ship_enemy_sank
         except Exception as ex:
