@@ -336,7 +336,26 @@ class BattleshipGame:
 
 
 #funtions tools
+def load_board_from_file(name_file):
+    try:
+        lines = None
+        board = []
+
+        with open(name_file) as file:
+            lines = file.readlines()
 
 
-game = BattleshipGame()
-game.play()
+        for line in lines:
+            board.append([])
+            for element in line:
+                if element != "\n":
+                    board[-1].append("" if element == "0" else element)
+                
+        return board
+    except Exception as ex:
+        print(ex)
+
+# game = BattleshipGame()
+# game.play()
+
+load_board_from_file("board01.txt")
