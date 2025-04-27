@@ -166,15 +166,14 @@ class Player:
             #TODO: Se debe crear una forma para que cuando la posicion de la nave no es valido
             #la solicite nuevamente, probar ya se agreo un ciclo while para hacerlo
 
-            print(len(self.ships))
             print(f"\nUbica tus naves {self.name}")
 
             for ship in self.ships:
-                print(ship, position_is_correct)
+                # print(ship, position_is_correct)
                 while not position_is_correct:
-                    row = int(input(f"En que fila quires poner el {ship.name}: ")) - 1
-                    column = int(input(f"En que columna quires poner el {ship.name}: ")) - 1
-                    direction = input(f"En que dirección quires poner el {ship.name}: ").upper()
+                    row = int(input(f"En que fila quieres poner el {ship.name}: ")) - 1
+                    column = int(input(f"En que columna quieres poner el {ship.name}: ")) - 1
+                    direction = input(f"En que dirección quieres poner el {ship.name}: ").upper()
                     position_is_correct = ship.place_ship(row, column, direction, self.board)
 
                     if not position_is_correct:
@@ -192,12 +191,23 @@ class Player:
 
     def print_board(self, which):
         try:
+            title_board = ''
             whith_board = self.board if which == 'board' else self.hits_board
 
+            if whith_board == 'board':
+                title_board = 'Tablero - Mis Naves'
+            else:
+                title_board = 'Tablero - Mis Ataques'
+
+            print(f"--------- {title_board} ---------")
             for row in whith_board:
                 row2 = [x if x!= '' else ' ' for x in row ]
                 # print(row if row != '' else ' ') 
-                print(row2)               
+                # print(row2)               
+                for e in row2:
+                    print(f"{e} ", end='')
+                print()
+            print(f"----------------------------------------")
         except Exception as ex:
             print(ex)
 
@@ -205,10 +215,12 @@ class Player:
         try:
             ship_sank = None
 
-            position_x = int(input("\nIndica la fila de ataque: ")) - 1
+            position_x = int(input(f"\n{self.name} Indica la fila de ataque: ")) - 1
+            self.validate_value_position(position_x)
             position_y = int(input("Indica la columna de ataque: ")) - 1
+            self.validate_value_position(position_y)
 
-            print("\n", len(enemy.board), position_x, position_y, enemy.board)
+            # print("\n", len(enemy.board), position_x, position_y, enemy.board)
 
             if enemy.board[position_x][position_y] != "":
                 ship_code = enemy.board[position_x][position_y]
@@ -231,6 +243,8 @@ class Player:
                 print("Impacto en el agua")
                 enemy.board[position_x][position_y] = "-"
                 self.hits_board[position_x][position_y] = "-"
+
+            self.print_board('hits')
 
         except Exception as ex:
             print(ex)
@@ -270,6 +284,14 @@ class Player:
         except Exception as ex:
             print(ex)
 
+    def validate_value_position(self, value):
+        try:
+            if value < 0 or value > 9:
+                raise ValueError("Posición erronea pierdes el turno")
+        except Exception as ex:
+            # raise Exception("Error") from ex
+            print(ex)
+
 class BattleshipGame:
     def __init__(self):
         try:
@@ -284,6 +306,9 @@ class BattleshipGame:
         player2_win = False
 
         try:
+            print("---------------------------")
+            print("--- BATALLA NAVAL !!!! ---")
+            print("---------------------------")
             self.player1.place_ships()
             self.player2.place_ships()
 
@@ -308,6 +333,10 @@ class BattleshipGame:
         except Exception as ex:
             print(ex)
             logger.exception("Ocurrió una excepción")
+
+
+#funtions tools
+
 
 game = BattleshipGame()
 game.play()
